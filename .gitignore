@@ -1,0 +1,18 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build output
+bin/
+obj/
+
+# Launch settings
+*.vscode/
+
+# Temporary files
+*.cache
+*.log
+
+# Ignore secrets for local only
+appsettings.Development.json

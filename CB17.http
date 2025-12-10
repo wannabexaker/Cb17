@@ -1,0 +1,6 @@
+@CB17_HostAddress = http://localhost:5267
+
+GET {{CB17_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
