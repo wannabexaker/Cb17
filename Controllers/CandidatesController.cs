@@ -1,88 +1,89 @@
 ﻿using CB17.Data;
+using CB17.DTOs;
 using CB17.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AutoMapper;
 
 namespace CB17.Controllers;
 
-// Controller for managing Candidate records (CRUD)
 [ApiController]
 [Route("api/[controller]")]
 public class CandidatesController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IMapper _mapper;
 
-    public CandidatesController(AppDbContext db)
+    public CandidatesController(AppDbContext db, IMapper mapper)
     {
         _db = db;
+        _mapper = mapper;
     }
 
     // GET: api/candidates
-    // Returns all candidates with their certifications
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var list = await _db.Candidates
-                            .Include(x => x.Certifications)
-                            .ToListAsync();
+        var list = await _db.Candidates.ToListAsync();
 
-        return Ok(list);
+        // Convert EF entities → DTOs
+        var result = _mapper.Map<List<CandidateDto>>(list);
+
+        return Ok(result);
     }
 
     // GET: api/candidates/{id}
-    // Returns a single candidate
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetOne(int id)
     {
-        var candidate = await _db.Candidates
-                                 .Include(x => x.Certifications)
-                                 .FirstOrDefaultAsync(x => x.Id == id);
-
-        if (candidate == null)
+        var item = await _db.Candidates.FindAsync(id);
+        if (item == null)
             return NotFound();
 
-        return Ok(candidate);
+        var dto = _mapper.Map<CandidateDto>(item);
+        return Ok(dto);
     }
 
     // POST: api/candidates
-    // Creates a new candidate
     [HttpPost]
-    public async Task<IActionResult> Create(Candidate model)
+    public async Task<IActionResult> Create(CandidateCreateDto dto)
     {
-        _db.Candidates.Add(model);
+        // Convert DTO → EF entity
+        var entity = _mapper.Map<Candidate>(dto);
+
+        _db.Candidates.Add(entity);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetOne), new { id = model.Id }, model);
+        var result = _mapper.Map<CandidateDto>(entity);
+        return CreatedAtAction(nameof(GetOne), new { id = entity.Id }, result);
     }
 
     // PUT: api/candidates/{id}
-    // Updates an existing candidate
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(int id, Candidate model)
+    public async Task<IActionResult> Update(int id, CandidateUpdateDto dto)
     {
-        var dbItem = await _db.Candidates.FindAsync(id);
-        if (dbItem == null)
+        var entity = await _db.Candidates.FindAsync(id);
+        if (entity == null)
             return NotFound();
 
-        dbItem.FirstName = model.FirstName;
-        dbItem.LastName = model.LastName;
-        dbItem.Email = model.Email;
-        dbItem.Phone = model.Phone;
+        // Apply DTO → entity updates
+        _mapper.Map(dto, entity);
 
         await _db.SaveChangesAsync();
-        return Ok(dbItem);
+
+        var result = _mapper.Map<CandidateDto>(entity);
+        return Ok(result);
     }
 
     // DELETE: api/candidates/{id}
-    // Deletes a candidate + all certifications (cascade)
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var candidate = await _db.Candidates.FindAsync(id);
-        if (candidate == null)
+        var entity = await _db.Candidates.FindAsync(id);
+        if (entity == null)
             return NotFound();
 
-        _db.Candidates.Remove(candidate);
+        _db.Candidates.Remove(entity);
         await _db.SaveChangesAsync();
 
         return NoContent();

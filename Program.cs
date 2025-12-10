@@ -16,6 +16,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 //  SERVICES CONFIGURATION
 // ===================================================
 
+//AutoMapper Configuration
+builder.Services.AddAutoMapper(typeof(Program));
+
 // Adds controller support (for API endpoints using MVC pattern)
 builder.Services.AddControllers();
 
